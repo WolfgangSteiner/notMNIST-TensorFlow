@@ -48,14 +48,14 @@ def accuracy(predictions, labels):
   return (100.0 * np.sum(np.argmax(predictions, 1) == np.argmax(labels, 1))
           / predictions.shape[0])
 
-class Classifier:
+class Classifier(object):
   image_size = 28
   num_labels = 10
   batch_size = 128
   tf_graph = None
   tf_optimizer = None
   tf_train_data = None
-  tr_train_labels = None
+  tf_train_labels = None
   tf_validation_data = None
   tf_test_data = None
   tf_loss = None
@@ -77,6 +77,7 @@ class Classifier:
     self.initialize_graph()
 
   def initialize_parameters(self):
+    self.tf_regularization = tf.placeholder(tf.float32, shape=())
     pass
 
   def initialize_graph(self):
@@ -84,7 +85,7 @@ class Classifier:
 
   def initialize_data(self):
     self.tf_train_data = tf.placeholder(tf.float32, shape=(self.batch_size, self.image_size * self.image_size))
-    self.tr_train_labels = tf.placeholder(tf.float32, shape=(self.batch_size, self.num_labels))
+    self.tf_train_labels = tf.placeholder(tf.float32, shape=(self.batch_size, self.num_labels))
     self.tf_validation_data = tf.constant(self.validation_data)
     self.tf_test_data = tf.constant(self.test_data)
 
@@ -96,7 +97,10 @@ class Classifier:
         offset = (step * self.batch_size) % (self.train_labels.shape[0] - self.batch_size)
         batch_data = train_dataset[offset:(offset + self.batch_size), :]
         batch_labels = train_labels[offset:(offset + self.batch_size), :]
-        feed_dict = {self.tf_train_data : batch_data, self.tr_train_labels : batch_labels}
+        feed_dict = {
+          self.tf_train_data : batch_data,
+          self.tf_train_labels : batch_labels,
+          self.tf_regularization : 0.5 }
         _, l, predictions = session.run([self.tf_optimizer, self.tf_loss, self.tf_train_prediction], feed_dict=feed_dict)
 
         if (step % 500 == 0):
@@ -127,7 +131,7 @@ class LogisticClassifier(Classifier):
       self.initialize_parameters()
 
       self.tf_logits = tf.matmul(self.tf_train_data, self.tf_weights) + self.tf_bias
-      self.tf_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(self.tf_logits, self.tr_train_labels))
+      self.tf_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(self.tf_logits, self.tf_train_labels))
       self.tf_optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(self.tf_loss)
       self.tf_train_prediction = tf.nn.softmax(self.tf_logits)
       self.TfValidationPrediction = tf.nn.softmax(tf.matmul(self.tf_validation_data, self.tf_weights) + self.tf_bias)
@@ -138,6 +142,7 @@ class NeuralNetworkOneLayer(Classifier):
   NumNeurons = 1024;
 
   def initialize_parameters(self):
+    super(NeuralNetworkOneLayer, self).initialize_parameters()
     self.w1 = tf.Variable(tf.truncated_normal([self.image_size * self.image_size, self.NumNeurons]))
     self.b1 = tf.Variable(tf.zeros([self.NumNeurons]))
     self.w2 = tf.Variable(tf.truncated_normal([self.NumNeurons, self.num_labels]))
@@ -151,8 +156,12 @@ class NeuralNetworkOneLayer(Classifier):
 
       self.tf_logits = tf.matmul(tf.nn.relu(tf.matmul(self.tf_train_data, self.w1) + self.b1), self.w2) + self.b2;
 
-      self.tf_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(self.tf_logits, self.tr_train_labels))
-      self.tf_optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(self.tf_loss)
+      self.tf_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(self.tf_logits, self.tf_train_labels)) \
+        + self.tf_regularization * \
+          (tf.reduce_sum(tf.matmul(self.w1, self.w1, transpose_b=True))\
+            + tf.reduce_sum(tf.matmul(self.w2, self.w2, transpose_b=True)))
+
+      self.tf_optimizer = tf.train.AdagradOptimizer(0.5).minimize(self.tf_loss)
       self.tf_train_prediction = tf.nn.softmax(self.tf_logits)
 
       self.TfValidationPrediction = tf.nn.softmax(
@@ -163,4 +172,4 @@ class NeuralNetworkOneLayer(Classifier):
 
 
 c = NeuralNetworkOneLayer(train_dataset, train_labels, valid_dataset, valid_labels, test_dataset, test_labels)
-c.train(1000)
+c.train(10001)
