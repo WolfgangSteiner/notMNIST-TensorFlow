@@ -9,6 +9,7 @@ import numpy as np
 import tensorflow as tf
 from six.moves import cPickle as pickle
 from six.moves import range
+import sys
 
 pickle_file = 'notMNIST.pickle'
 
@@ -99,9 +100,17 @@ class Classifier:
         _, l, predictions = session.run([self.tf_optimizer, self.tf_loss, self.tf_train_prediction], feed_dict=feed_dict)
 
         if (step % 500 == 0):
+          print("")
           print("Minibatch loss at step %d: %f" % (step, l))
           print("Minibatch accuracy: %.1f%%" % accuracy(predictions, batch_labels))
           print("Validation accuracy: %.1f%%" % accuracy(self.TfValidationPrediction.eval(), self.validation_labels))
+        else:
+          if (step % 10 == 0):
+            sys.stdout.write('.')
+            sys.stdout.flush()
+          if (step % 50 == 0):
+            sys.stdout.write(' ' + str(step % 500) + ' ')
+            sys.stdout.flush()
 
       print("Test accuracy: %.1f%%" % accuracy(self.TfTestPrediction.eval(), test_labels))
 
