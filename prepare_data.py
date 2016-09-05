@@ -16,7 +16,6 @@
 # These are all the modules we'll be using later. Make sure you can import them
 # before proceeding further.
 from __future__ import print_function
-import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
@@ -70,27 +69,6 @@ def maybe_extract(filename, force=False):
 
 train_folders = maybe_extract(train_filename)
 test_folders = maybe_extract(test_filename)
-
-
-# ---
-# Problem 1
-# ---------
-#
-# Let's take a peek at some of the data to make sure it looks sensible. Each exemplar should be an image of a character A through J rendered in a different font. Display a sample of the images that we just downloaded. Hint: you can use the package IPython.display.
-#
-
-# In[13]:
-
-display(Image("notMNIST_small/A/MDEtMDEtMDAudHRm.png"))
-
-
-# Now let's load the data in a more manageable format. Since, depending on your computer setup you might not be able to fit it all in memory, we'll load each class into a separate dataset, store them on disk and curate them independently. Later we'll merge them into a single dataset of manageable size.
-#
-# We'll convert the entire dataset into a 3D array (image index, x, y) of floating point values, normalized to have approximately zero mean and standard deviation ~0.5 to make training easier down the road.
-#
-# A few images might not be readable, we'll just skip them.
-
-# In[24]:
 
 image_size = 28  # Pixel width and height.
 pixel_depth = 255.0  # Number of levels per pixel.
@@ -146,43 +124,6 @@ def maybe_pickle(data_folders, min_num_images_per_class, force=False):
 train_datasets = maybe_pickle(train_folders, 45000)
 test_datasets = maybe_pickle(test_folders, 1800)
 
-
-# ---
-# Problem 2
-# ---------
-#
-# Let's verify that the data still looks good. Displaying a sample of the labels and images from the ndarray. Hint: you can use matplotlib.pyplot.
-#
-# ---
-
-# In[35]:
-
-import random
-
-a = random.choice(pickle.load(open(random.choice(train_datasets), "rb" )))
-imgplot = plt.imshow(a)
-
-
-# ---
-# Problem 3
-# ---------
-# Another check: we expect the data to be balanced across classes. Verify that.
-#
-# ---
-
-# In[42]:
-
-for f in train_datasets:
-    print(f)
-    print(len(pickle.load(open(f, "rb"))))
-
-
-# Merge and prune the training data as needed. Depending on your computer setup, you might not be able to fit it all in memory, and you can tune `train_size` as needed. The labels will be stored into a separate array of integers 0 through 9.
-#
-# Also create a validation dataset for hyperparameter tuning.
-
-# In[43]:
-
 def make_arrays(nb_rows, img_size):
   if nb_rows:
     dataset = np.ndarray((nb_rows, img_size, img_size), dtype=np.float32)
@@ -225,7 +166,6 @@ def merge_datasets(pickle_files, train_size, valid_size=0):
 
   return valid_dataset, valid_labels, train_dataset, train_labels
 
-
 train_size = 200000
 valid_size = 10000
 test_size = 10000
@@ -239,15 +179,6 @@ print('Validation:', valid_dataset.shape, valid_labels.shape)
 print('Testing:', test_dataset.shape, test_labels.shape)
 
 
-# In[ ]:
-
-
-
-
-# Next, we'll randomize the data. It's important to have the labels well shuffled for the training and test distributions to match.
-
-# In[44]:
-
 def randomize(dataset, labels):
   permutation = np.random.permutation(labels.shape[0])
   shuffled_dataset = dataset[permutation,:,:]
@@ -257,29 +188,6 @@ train_dataset, train_labels = randomize(train_dataset, train_labels)
 test_dataset, test_labels = randomize(test_dataset, test_labels)
 valid_dataset, valid_labels = randomize(valid_dataset, valid_labels)
 
-
-# In[ ]:
-
-
-
-
-# ---
-# Problem 4
-# ---------
-# Convince yourself that the data is still good after shuffling!
-#
-# ---
-
-# In[63]:
-
-index = random.randint(1,len(valid_dataset))
-print ("A B C D E F G H I J".split(' ')[valid_labels[index]])
-plt.imshow(valid_dataset[index])
-
-
-# Finally, let's save the data for later reuse:
-
-# In[64]:
 
 pickle_file = 'notMNIST.pickle'
 
@@ -304,35 +212,3 @@ except Exception as e:
 
 statinfo = os.stat(pickle_file)
 print('Compressed pickle size:', statinfo.st_size / 1024 / 1024, " mb")
-
-
-# ---
-# Problem 5
-# ---------
-#
-# By construction, this dataset might contain a lot of overlapping samples, including training data that's also contained in the validation and test set! Overlap between training and test can skew the results if you expect to use your model in an environment where there is never an overlap, but are actually ok if you expect to see training samples recur when you use it.
-# Measure how much overlap there is between training, validation and test samples.
-#
-# Optional questions:
-# - What about near duplicates between datasets? (images that are almost identical)
-# - Create a sanitized validation and test set, and compare your accuracy on those in subsequent assignments.
-# ---
-
-# In[73]:
-
-dict = {}
-for x in train_dataset:
-    dict[x.tostring()] = True
-
-valid_count = 0
-for x_v in valid_dataset:
-    if dict.has_key(x_v.tostring()):
-        valid_count+=1
-
-test_count = 0
-for x_t in test_dataset:
-    if dict.has_key(x_t.tostring()):
-        test_count+=1
-
-print("Overlap for validation set: ", float(valid_count)/len(valid_dataset))
-print("Overlap for test set: ", float(test_count)/len(test_dataset))
