@@ -100,7 +100,7 @@ class Classifier(object):
         feed_dict = {
           self.tf_train_data : batch_data,
           self.tf_train_labels : batch_labels,
-          self.tf_regularization : 0.5 }
+          self.tf_regularization : 0.1 }
         _, l, predictions = session.run([self.tf_optimizer, self.tf_loss, self.tf_train_prediction], feed_dict=feed_dict)
 
         if (step % 500 == 0):
@@ -243,4 +243,4 @@ class NeuralNetworkThreeLayers(Classifier):
 
 
 c = NeuralNetworkThreeLayers(train_dataset, train_labels, valid_dataset, valid_labels, test_dataset, test_labels)
-c.train(10000)
+c.train(20000)
