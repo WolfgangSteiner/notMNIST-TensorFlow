@@ -171,5 +171,45 @@ class NeuralNetworkOneLayer(Classifier):
         tf.matmul(tf.nn.relu(tf.matmul(self.tf_test_data, self.w1) + self.b1), self.w2) + self.b2)
 
 
-c = NeuralNetworkOneLayer(train_dataset, train_labels, valid_dataset, valid_labels, test_dataset, test_labels)
-c.train(10001)
+class NeuralNetworkTwoLayers(Classifier):
+  NumNeurons = 1024;
+
+  def initialize_parameters(self):
+    self.NumNeurons = 512
+    super(NeuralNetworkTwoLayers, self).initialize_parameters()
+    self.w1 = tf.Variable(tf.truncated_normal([self.image_size * self.image_size, self.NumNeurons]))
+    self.b1 = tf.Variable(tf.zeros([self.NumNeurons]))
+    self.w2 = tf.Variable(tf.truncated_normal([self.NumNeurons, self.NumNeurons]))
+    self.b2 = tf.Variable(tf.zeros([self.NumNeurons]))
+    self.w3 = tf.Variable(tf.truncated_normal([self.NumNeurons, self.num_labels]))
+    self.b3 = tf.Variable(tf.zeros([self.num_labels]))
+
+
+  def initialize_graph(self):
+    self.tf_graph = tf.Graph()
+    with self.tf_graph.as_default():
+      self.initialize_data()
+      self.initialize_parameters()
+
+      self.tf_logits = \
+        tf.matmul(tf.nn.relu(tf.matmul(tf.nn.relu(tf.matmul(self.tf_train_data, self.w1) + self.b1), self.w2) + self.b2), self.w3) + self.b3
+
+      self.tf_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(self.tf_logits, self.tf_train_labels)) \
+        + self.tf_regularization * \
+          (tf.reduce_sum(tf.matmul(self.w1, self.w1, transpose_b=True))\
+            + tf.reduce_sum(tf.matmul(self.w2, self.w2, transpose_b=True))\
+            + tf.reduce_sum(tf.matmul(self.w3, self.w3, transpose_b=True)))
+
+      self.tf_optimizer = tf.train.AdagradOptimizer(0.5).minimize(self.tf_loss)
+      self.tf_train_prediction = tf.nn.softmax(self.tf_logits)
+
+      self.TfValidationPrediction = tf.nn.softmax(
+        tf.matmul(tf.nn.relu(tf.matmul(tf.nn.relu(tf.matmul(self.tf_validation_data, self.w1) + self.b1), self.w2) + self.b2), self.w3) + self.b3)
+
+      self.TfTestPrediction = tf.nn.softmax(
+        tf.matmul(tf.nn.relu(tf.matmul(tf.nn.relu(tf.matmul(self.tf_test_data, self.w1) + self.b1), self.w2) + self.b2), self.w3) + self.b3)
+
+
+
+c = NeuralNetworkTwoLayers(train_dataset, train_labels, valid_dataset, valid_labels, test_dataset, test_labels)
+c.train(10000)
