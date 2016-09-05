@@ -100,7 +100,7 @@ class Classifier(object):
         feed_dict = {
           self.tf_train_data : batch_data,
           self.tf_train_labels : batch_labels,
-          self.tf_regularization : 0.1 }
+          self.tf_regularization : 0.01 }
         _, l, predictions = session.run([self.tf_optimizer, self.tf_loss, self.tf_train_prediction], feed_dict=feed_dict)
 
         if (step % 500 == 0):
@@ -139,7 +139,7 @@ class LogisticClassifier(Classifier):
 
 
 class NeuralNetworkOneLayer(Classifier):
-  NumNeurons = 1024;
+  NumNeurons = 392;
 
   def initialize_parameters(self):
     super(NeuralNetworkOneLayer, self).initialize_parameters()
@@ -175,13 +175,14 @@ class NeuralNetworkTwoLayers(Classifier):
   NumNeurons = 1024;
 
   def initialize_parameters(self):
-    self.NumNeurons = 512
+    self.num_neurons_1 = 400
+    self.num_neurons_2 = 200
     super(NeuralNetworkTwoLayers, self).initialize_parameters()
-    self.w1 = tf.Variable(tf.truncated_normal([self.image_size * self.image_size, self.NumNeurons]))
-    self.b1 = tf.Variable(tf.zeros([self.NumNeurons]))
-    self.w2 = tf.Variable(tf.truncated_normal([self.NumNeurons, self.NumNeurons]))
-    self.b2 = tf.Variable(tf.zeros([self.NumNeurons]))
-    self.w3 = tf.Variable(tf.truncated_normal([self.NumNeurons, self.num_labels]))
+    self.w1 = tf.Variable(tf.truncated_normal([self.image_size * self.image_size, self.num_neurons_1]))
+    self.b1 = tf.Variable(tf.zeros([self.num_neurons_1]))
+    self.w2 = tf.Variable(tf.truncated_normal([self.num_neurons_1, self.num_neurons_2]))
+    self.b2 = tf.Variable(tf.zeros([self.num_neurons_2]))
+    self.w3 = tf.Variable(tf.truncated_normal([self.num_neurons_2, self.num_labels]))
     self.b3 = tf.Variable(tf.zeros([self.num_labels]))
 
 
@@ -242,5 +243,5 @@ class NeuralNetworkThreeLayers(Classifier):
         tf.matmul(tf.nn.relu(tf.matmul(tf.nn.relu(tf.matmul(tf.nn.relu(tf.matmul(self.tf_test_data, self.w1) + self.b1), self.w2) + self.b2), self.w3) + self.b3), self.w4) + self.b4)
 
 
-c = NeuralNetworkThreeLayers(train_dataset, train_labels, valid_dataset, valid_labels, test_dataset, test_labels)
-c.train(20000)
+c = NeuralNetworkTwoLayers(train_dataset, train_labels, valid_dataset, valid_labels, test_dataset, test_labels)
+c.train(40000)
