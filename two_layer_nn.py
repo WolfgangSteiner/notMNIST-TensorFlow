@@ -38,8 +38,8 @@ def reformat(dataset, labels):
 def weight_variable(dim):
     return tf.Variable(tf.truncated_normal(dim))
 
-def bias_variable(dim):
-    return tf.Variable(tf.truncated_normal(dim))
+def bias_variable(length):
+    return tf.Variable(tf.truncated_normal([length]))
 
 def nn_layer(input_tensor, input_dim, output_dim, layer_name, act = tf.nn.relu):
     with tf.name_scope(layer_name):
@@ -92,12 +92,12 @@ with tf_graph.as_default():
     tf_regularization = tf.placeholder(tf.float32, shape=())
     tf_learning_rate = tf.placeholder(tf.float32, shape=())
 
-    w1 = tf.Variable(tf.truncated_normal([image_size * image_size, num_neurons_1]))
-    b1 = tf.Variable(tf.zeros([num_neurons_1]))
-    w2 = tf.Variable(tf.truncated_normal([num_neurons_1, num_neurons_2]))
-    b2 = tf.Variable(tf.zeros([num_neurons_2]))
-    w3 = tf.Variable(tf.truncated_normal([num_neurons_2, num_labels]))
-    b3 = tf.Variable(tf.zeros([num_labels]))
+    w1 = weight_variable([image_size * image_size, num_neurons_1])
+    b1 = bias_variable(num_neurons_1)
+    w2 = weight_variable([num_neurons_1, num_neurons_2])
+    b2 = bias_variable(num_neurons_2)
+    w3 = weight_variable([num_neurons_2, num_labels])
+    b3 = bias_variable(num_labels)
 
     tf_logits = tf.matmul(tf.nn.relu(tf.matmul(tf.nn.relu(tf.matmul(tf_input, w1) + b1), w2) + b2), w3) + b3
     tf_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(tf_logits, tf_labels)) \
