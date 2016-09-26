@@ -101,7 +101,7 @@ with tf_graph.as_default():
 
     tf_logits = tf.matmul(tf.nn.relu(tf.matmul(tf.nn.relu(tf.matmul(tf_input, w1) + b1), w2) + b2), w3) + b3
     tf_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(tf_logits, tf_labels)) \
-        + tf_regularization * (tf.nn.l2_loss(w1) + tf.nn.l2_loss(w2) + tf.nn.l2_loss(w3))
+        + tf_regularization * (tf.nn.l2_loss(w1) + tf.nn.l2_loss(b1) + tf.nn.l2_loss(w2) + tf.nn.l2_loss(b2) + tf.nn.l2_loss(w3) + tf.nn.l2_loss(b3) )
     tf_optimizer = tf.train.AdagradOptimizer(0.1).minimize(tf_loss)
     tf_prediction = tf.nn.softmax(tf_logits)
 
